@@ -14,18 +14,24 @@ import io.searchbox.core.Search;
 import io.searchbox.core.SearchResult;
 
 @Component
-public class SearchServiceImpl {
+public class SearchService {
 
 	@Autowired
 	private SearchClient searchClient;
 
-	public void getSearch() {
+	public void searchAll(String index) {
 
 		JestClient client = searchClient.getClient();
 		
 		Search search = new Search
-				.Builder("query")
-				.addIndex("vca_mdm_index")
+				.Builder("{" + 
+						"  \"query\": {" + 
+						"    \"match\": {" + 
+						"      \"businessIndustry\" : \"Education\"" + 
+						"    }" + 
+						"  }" + 
+						"}")
+				.addIndex(index)
 				.build();
 		
 		SearchResult result = null;
