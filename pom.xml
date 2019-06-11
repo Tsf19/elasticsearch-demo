@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.tousif</groupId>
@@ -28,41 +30,6 @@
 			<version>3.8.1</version>
 			<scope>test</scope>
 		</dependency>
-
-		<!-- https://mvnrepository.com/artifact/org.elasticsearch/elasticsearch -->
-		<dependency>
-			<groupId>org.elasticsearch</groupId>
-			<artifactId>elasticsearch</artifactId>
-			<version>7.1.0</version>
-		</dependency>
-
-		<!-- https://mvnrepository.com/artifact/org.elasticsearch.client/elasticsearch-rest-high-level-client -->
-		<dependency>
-			<groupId>org.elasticsearch.client</groupId>
-			<artifactId>elasticsearch-rest-high-level-client</artifactId>
-			<version>7.1.0</version>
-		</dependency>
-
-		<!-- https://mvnrepository.com/artifact/io.searchbox/jest -->
-		<dependency>
-			<groupId>io.searchbox</groupId>
-			<artifactId>jest</artifactId>
-			<version>6.3.1</version>
-		</dependency>
-
-
-		<dependency>
-			<groupId>org.elasticsearch.client</groupId>
-			<artifactId>elasticsearch-rest-client-sniffer</artifactId>
-			<version>7.1.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.elasticsearch.client</groupId>
-			<artifactId>transport</artifactId>
-			<version>7.1.1</version>
-		</dependency>
-
 
 		<!-- https://mvnrepository.com/artifact/org.springframework.data/spring-data-elasticsearch -->
 		<dependency>
@@ -94,6 +61,14 @@
 		</dependency>
 
 
+		<!-- https://mvnrepository.com/artifact/org.springframework/spring-webmvc -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webmvc</artifactId>
+			<version>5.1.7.RELEASE</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<properties>
@@ -120,9 +95,8 @@
 	</build>
 
 	<modules>
-		<module>es-search</module>
-		<module>es-web</module>
-    <module>elasticsearch-jestclient</module>
-  </modules>
+		<module>elasticsearch-jestclient</module>
+		<module>elasticsearch-7.1</module>
+	</modules>
 
 </project>
