@@ -32,11 +32,9 @@ public class SearchService {
 
 	MatchAllQueryBuilder qb = new MatchAllQueryBuilder();
 	
-	public SearchResponse searchAll(String index) {
+	public SearchResponse searchAll() {
 
-		@SuppressWarnings("unused")
 		RestHighLevelClient client = searchClient.getClient();
-		
 		
 		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
 		searchSourceBuilder.query(QueryBuilders.matchAllQuery()); 
@@ -58,5 +56,28 @@ public class SearchService {
 		
 //		CfgBusinessIndustry cfgBusinessIndustry = result.getFirstHit(CfgBusinessIndustry.class).source;
 		
+	}
+
+	public SearchResponse searchAllWithinIndex(String index) {
+		
+		RestHighLevelClient client = searchClient.getClient();
+		
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+		searchSourceBuilder.query(QueryBuilders.matchAllQuery()); 
+
+		SearchRequest searchRequest = new SearchRequest(); 
+		searchRequest.source(searchSourceBuilder).indices(index);
+		
+		RequestOptions COMMON_OPTIONS = RequestOptions.DEFAULT;
+		
+		SearchResponse searchResponse = null;
+		
+		try {
+			searchResponse = client.search(searchRequest, COMMON_OPTIONS);
+			System.out.println("\n\n"+searchResponse+"\n\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return searchResponse;
 	}
 }
