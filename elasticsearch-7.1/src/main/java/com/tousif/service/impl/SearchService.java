@@ -13,6 +13,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
+import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -65,6 +66,31 @@ public class SearchService {
 		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
 		searchSourceBuilder.query(QueryBuilders.matchAllQuery()); 
 
+		SearchRequest searchRequest = new SearchRequest(); 
+		searchRequest.source(searchSourceBuilder).indices(index);
+		
+		RequestOptions COMMON_OPTIONS = RequestOptions.DEFAULT;
+		
+		SearchResponse searchResponse = null;
+		
+		try {
+			searchResponse = client.search(searchRequest, COMMON_OPTIONS);
+			System.out.println("\n\n"+searchResponse+"\n\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return searchResponse;
+	}
+
+	public SearchResponse searchFieldInIndex(String index, String fieldName, String fieldValue) {
+		RestHighLevelClient client = searchClient.getClient();
+		
+		MatchQueryBuilder matchQueryBuilder = new MatchQueryBuilder(fieldName, fieldValue);
+
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+//		searchSourceBuilder.query(QueryBuilders.existsQuery(field)); 
+		searchSourceBuilder.query(matchQueryBuilder);
+		
 		SearchRequest searchRequest = new SearchRequest(); 
 		searchRequest.source(searchSourceBuilder).indices(index);
 		

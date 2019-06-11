@@ -42,11 +42,20 @@ public class SearchController {
 		return searchResponse;
 	}
 	
-	
+//	 http://localhost:8080/elasticsearch-7.1/search/search-index?index=vca_mdm_business_index
 	@PostMapping(value = "/search-index")
-	public SearchResponse searchIndex(@RequestParam(value = "index", required = false) String index, Locale locale, Model model) {
-		index = "vca_mdm_business_index";
+	public SearchResponse searchIndex(@RequestParam(value = "index", required = true) String index, Locale locale, Model model) {
 		SearchResponse searchResponse = searchService.searchAllWithinIndex(index);
+		return searchResponse;
+	}
+	
+//	 http://localhost:8080/elasticsearch-7.1/search/search-field-in-index?index=vca_mdm_business_index&field=state&fieldValue=Delhi
+	@PostMapping(value = "/search-field-in-index")
+	public SearchResponse searchFieldInIndex(@RequestParam(value = "index", required = true) String index
+			,@RequestParam(value = "field", required = true) String fieldName
+			,@RequestParam(value = "fieldValue", required = true) String fieldValue
+			,Locale locale, Model model) {
+		SearchResponse searchResponse = searchService.searchFieldInIndex(index, fieldName, fieldValue);
 		return searchResponse;
 	}
 	
