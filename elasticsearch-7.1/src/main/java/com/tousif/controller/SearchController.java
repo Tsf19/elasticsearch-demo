@@ -65,16 +65,23 @@ public class SearchController {
 		return searchResponse;
 	}
 	
-	@PostMapping(value = "/search-field-in-index-fuzziness2")
+	@PostMapping(value = "/search-options")
 	public SearchResponse searchFieldInIndexFuzziness2(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
-		SearchResponse searchResponse = searchService.searchFieldInIndexFuzziness2(inputMap.get("index"), inputMap.get("fieldName"), inputMap.get("fieldValue"));
+		SearchResponse searchResponse = searchService.searchOptions(inputMap.get("index"), inputMap.get("fieldName"), inputMap.get("fieldValue"));
 		return searchResponse;
 	}
 	
 	@PostMapping(value = "/requesting-highlighting")
 	public SearchResponse RequestingHighlighting(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
-		SearchResponse searchResponse = searchService.RequestingHighlighting(inputMap.get("index"), inputMap.get("fieldName"), inputMap.get("fieldValue"));
+		SearchResponse searchResponse = searchService.requestingHighlighting(inputMap.get("index"), inputMap.get("fieldName"), inputMap.get("fieldValue"));
 		return searchResponse;
 	}
+	
+	@PostMapping(value = "/requesting-aggregations")
+	public SearchResponse requestingAggregations(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
+		SearchResponse searchResponse = searchService.requestingAggregations(inputMap.get("index"), inputMap.get("fieldName"), inputMap.get("fieldValue"));
+		return searchResponse;
+	}
+	
 	
 }
