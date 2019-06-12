@@ -71,4 +71,10 @@ public class SearchController {
 		return searchResponse;
 	}
 	
+	@PostMapping(value = "/requesting-highlighting")
+	public SearchResponse RequestingHighlighting(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
+		SearchResponse searchResponse = searchService.RequestingHighlighting(inputMap.get("index"), inputMap.get("fieldName"), inputMap.get("fieldValue"));
+		return searchResponse;
+	}
+	
 }

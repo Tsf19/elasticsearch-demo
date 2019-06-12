@@ -19,6 +19,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -200,6 +201,59 @@ public class SearchService {
 		searchSourceBuilder.sort(new FieldSortBuilder("_id").order(SortOrder.ASC));
 		
 		
+		
+		RequestOptions COMMON_OPTIONS = RequestOptions.DEFAULT;
+		
+		SearchResponse searchResponse = null;
+		
+		try {
+			searchResponse = client.search(searchRequest, COMMON_OPTIONS);
+			System.out.println("\n\n"+searchResponse+"\n\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return searchResponse;
+	}
+	
+	/**@Requesting_Highlighting
+	 *
+	 * Highlighting search results can be achieved by setting a HighlightBuilder on the SearchSourceBuilder.
+	 * Different highlighting behaviour can be defined for each fields by adding one or more HighlightBuilder.
+	 * Field instances to a HighlightBuilder.
+	 */
+	public SearchResponse RequestingHighlighting(String index, String fieldName, String fieldValue) {
+		RestHighLevelClient client = searchClient.getClient();
+		
+		QueryBuilder matchQueryBuilder = QueryBuilders.matchQuery(fieldName, fieldValue)
+                .fuzziness(Fuzziness.AUTO)
+                .prefixLength(3)
+                .maxExpansions(10);
+		
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+		searchSourceBuilder.query(matchQueryBuilder);
+		
+		SearchRequest searchRequest = new SearchRequest(); 
+		searchRequest.source(searchSourceBuilder).indices(index);
+		
+//		searchSourceBuilder.fetchSource(false);
+		searchSourceBuilder.sort(new FieldSortBuilder("_id").order(SortOrder.ASC));
+		
+		/**
+		 * 1. Creates a new HighlightBuilder
+		 * 2. Create a field highlighter for the title field
+		 * 3. Set the field highlighter type
+		 * 4. Add the field highlighter to the highlight builder
+		 */
+		HighlightBuilder highlightBuilder = new HighlightBuilder(); 
+		
+		HighlightBuilder.Field highlightState = new HighlightBuilder.Field("state");
+		highlightState.highlighterType("unified");
+		highlightBuilder.field(highlightState);  
+		
+		HighlightBuilder.Field highlightCountry = new HighlightBuilder.Field("country");
+		highlightBuilder.field(highlightCountry);
+		
+		searchSourceBuilder.highlighter(highlightBuilder);
 		
 		RequestOptions COMMON_OPTIONS = RequestOptions.DEFAULT;
 		
