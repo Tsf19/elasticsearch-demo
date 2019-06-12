@@ -12,8 +12,10 @@ import org.elasticsearch.client.HttpAsyncResponseConsumerFactory;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -87,6 +89,67 @@ public class SearchService {
 		
 		MatchQueryBuilder matchQueryBuilder = new MatchQueryBuilder(fieldName, fieldValue);
 
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+//		searchSourceBuilder.query(QueryBuilders.existsQuery(field)); 
+		searchSourceBuilder.query(matchQueryBuilder);
+		
+		SearchRequest searchRequest = new SearchRequest(); 
+		searchRequest.source(searchSourceBuilder).indices(index);
+		
+		RequestOptions COMMON_OPTIONS = RequestOptions.DEFAULT;
+		
+		SearchResponse searchResponse = null;
+		
+		try {
+			searchResponse = client.search(searchRequest, COMMON_OPTIONS);
+			System.out.println("\n\n"+searchResponse+"\n\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return searchResponse;
+	}
+	
+	public SearchResponse searchFieldInIndexFuzziness(String index, String fieldName, String fieldValue) {
+		RestHighLevelClient client = searchClient.getClient();
+		
+		MatchQueryBuilder matchQueryBuilder = new MatchQueryBuilder(fieldName, fieldValue);
+		matchQueryBuilder.fuzziness(Fuzziness.AUTO); 
+		matchQueryBuilder.prefixLength(3); 
+		matchQueryBuilder.maxExpansions(10);
+
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+//		searchSourceBuilder.query(QueryBuilders.existsQuery(field)); 
+		searchSourceBuilder.query(matchQueryBuilder);
+		
+		SearchRequest searchRequest = new SearchRequest(); 
+		searchRequest.source(searchSourceBuilder).indices(index);
+		
+		RequestOptions COMMON_OPTIONS = RequestOptions.DEFAULT;
+		
+		SearchResponse searchResponse = null;
+		
+		try {
+			searchResponse = client.search(searchRequest, COMMON_OPTIONS);
+			System.out.println("\n\n"+searchResponse+"\n\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return searchResponse;
+	}
+	
+	public SearchResponse searchFieldInIndexFuzziness2(String index, String fieldName, String fieldValue) {
+		RestHighLevelClient client = searchClient.getClient();
+		
+//		MatchQueryBuilder matchQueryBuilder = new MatchQueryBuilder(fieldName, fieldValue);
+//		matchQueryBuilder.fuzziness(Fuzziness.AUTO); 
+//		matchQueryBuilder.prefixLength(3); 
+//		matchQueryBuilder.maxExpansions(10);
+
+		QueryBuilder matchQueryBuilder = QueryBuilders.matchQuery(fieldName, fieldValue)
+                .fuzziness(Fuzziness.AUTO)
+                .prefixLength(3)
+                .maxExpansions(10);
+		
 		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
 //		searchSourceBuilder.query(QueryBuilders.existsQuery(field)); 
 		searchSourceBuilder.query(matchQueryBuilder);

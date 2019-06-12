@@ -59,4 +59,16 @@ public class SearchController {
 		return searchResponse;
 	}
 	
+	@PostMapping(value = "/search-field-in-index-fuzziness")
+	public SearchResponse searchFieldInIndexFuzziness(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
+		SearchResponse searchResponse = searchService.searchFieldInIndexFuzziness(inputMap.get("index"), inputMap.get("fieldName"), inputMap.get("fieldValue"));
+		return searchResponse;
+	}
+	
+	@PostMapping(value = "/search-field-in-index-fuzziness2")
+	public SearchResponse searchFieldInIndexFuzziness2(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
+		SearchResponse searchResponse = searchService.searchFieldInIndexFuzziness2(inputMap.get("index"), inputMap.get("fieldName"), inputMap.get("fieldValue"));
+		return searchResponse;
+	}
+	
 }
