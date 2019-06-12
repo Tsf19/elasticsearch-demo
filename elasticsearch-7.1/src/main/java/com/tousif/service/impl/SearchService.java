@@ -19,6 +19,8 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -109,6 +111,11 @@ public class SearchService {
 		return searchResponse;
 	}
 	
+	/**
+	 * Search queries are created using QueryBuilder objects. A QueryBuilder exists for every search query type 
+	 * supported by Elasticsearch’s Query DSL.A QueryBuilder can be created using its constructor.
+	 * Once created, the QueryBuilder object provides methods to configure the options of the search query it creates. 
+	 */
 	public SearchResponse searchFieldInIndexFuzziness(String index, String fieldName, String fieldValue) {
 		RestHighLevelClient client = searchClient.getClient();
 		
@@ -120,6 +127,7 @@ public class SearchService {
 		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
 //		searchSourceBuilder.query(QueryBuilders.existsQuery(field)); 
 		searchSourceBuilder.query(matchQueryBuilder);
+		
 		
 		SearchRequest searchRequest = new SearchRequest(); 
 		searchRequest.source(searchSourceBuilder).indices(index);
@@ -137,6 +145,13 @@ public class SearchService {
 		return searchResponse;
 	}
 	
+	
+	
+	
+	/**
+	 * QueryBuilder objects can also be created using the QueryBuilders utility class. This class provides
+	 * helper methods that can be used to create QueryBuilder objects using a fluent programming style.
+	 */
 	public SearchResponse searchFieldInIndexFuzziness2(String index, String fieldName, String fieldValue) {
 		RestHighLevelClient client = searchClient.getClient();
 		
@@ -150,12 +165,41 @@ public class SearchService {
                 .prefixLength(3)
                 .maxExpansions(10);
 		
+		/**
+		 * Whatever the method used to create it, the QueryBuilder object must be added to the SearchSourceBuilder as follows:
+		 */
 		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
 //		searchSourceBuilder.query(QueryBuilders.existsQuery(field)); 
 		searchSourceBuilder.query(matchQueryBuilder);
 		
 		SearchRequest searchRequest = new SearchRequest(); 
 		searchRequest.source(searchSourceBuilder).indices(index);
+		
+
+		/**
+		 * @Source_filtering
+		 * By default, search requests return the contents of the document _source but like in the Rest API you can overwrite this behavior.
+		 * For example, you can turn off _source retrieval completely:
+		 */
+//		searchSourceBuilder.fetchSource(false);
+		
+		/**
+		 * The method also accepts an array of one or more wildcard patterns to control which fields get included or excluded in a more fine grained way:
+		 */
+		String[] includeFields = new String[] {"country", "state", "cfg_*"};
+//		String[] includeFields = null;
+//		String[] excludeFields = new String[] {"section", "established_date"};
+		String[] excludeFields = null;
+		searchSourceBuilder.fetchSource(includeFields, excludeFields);
+		
+		/**
+		 * @Specifying_Sorting
+		 * The SearchSourceBuilder allows to add one or more SortBuilder instances. There are four special implementations
+		 * (Field-, Score-, GeoDistance- and ScriptSortBuilder).
+		 */
+		searchSourceBuilder.sort(new FieldSortBuilder("_id").order(SortOrder.ASC));
+		
+		
 		
 		RequestOptions COMMON_OPTIONS = RequestOptions.DEFAULT;
 		
