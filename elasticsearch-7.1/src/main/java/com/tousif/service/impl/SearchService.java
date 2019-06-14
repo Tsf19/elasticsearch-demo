@@ -13,6 +13,7 @@ import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -332,11 +333,19 @@ public class SearchService {
 		
 		RequestOptions COMMON_OPTIONS = RequestOptions.DEFAULT;
 		
-		TermsAggregationBuilder aggregation = AggregationBuilders.terms("by_company")
-		        .field("lowest_generic_line_hierarchy_id");
+//		TermsAggregationBuilder aggregation = AggregationBuilders.terms("by_company")
+//		        .field("lowest_generic_line_hierarchy_id");
+//		
+//		aggregation.subAggregation(AggregationBuilders.avg("lowest_generic_line_hierarchy_id")
+//		        .field("lowest_generic_line_hierarchy_id"));
 		
-		aggregation.subAggregation(AggregationBuilders.avg("lowest_generic_line_hierarchy_id")
-		        .field("lowest_generic_line_hierarchy_id"));
+		AggregationBuilder aggregation = AggregationBuilders
+				.global("aggs")
+				.subAggregation(
+						AggregationBuilders
+						.terms("lowest_generic_line_hierarchy_id")
+						.field("lowest_generic_line_hierarchy_id"));
+		
 		
 		searchSourceBuilder.aggregation(aggregation);
 		
