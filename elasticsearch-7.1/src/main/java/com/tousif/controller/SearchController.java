@@ -79,7 +79,17 @@ public class SearchController {
 	
 	@PostMapping(value = "/requesting-aggregations")
 	public SearchResponse requestingAggregations(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
-		SearchResponse searchResponse = searchService.requestingAggregations(inputMap.get("index"), inputMap.get("fieldName"), inputMap.get("fieldValue"));
+		SearchResponse searchResponse = searchService.requestingAggregations(inputMap.get("index"), inputMap.get("fieldName1"), inputMap.get("fieldName2"));
+		return searchResponse;
+	}
+	
+	@PostMapping(value = "/search-different-operations")
+	public SearchResponse searchDifferentOperations(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
+		SearchResponse searchResponse = searchService.searchDifferentOperations(inputMap.get("index"),
+				inputMap.get("fieldName"),
+				inputMap.get("value1"),
+				inputMap.get("value2"),
+				inputMap.get("operation"));
 		return searchResponse;
 	}
 	

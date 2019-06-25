@@ -3,21 +3,29 @@ package com.tousif.service.impl;
 
 
 import java.io.IOException;
+import java.util.Map;
 
+import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.Fuzziness;
-import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.elasticsearch.search.aggregations.metrics.Avg;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -240,10 +248,10 @@ public class SearchService {
 		/**
 		 * The method also accepts an array of one or more wildcard patterns to control which fields get included or excluded in a more fine grained way:
 		 */
-		String[] includeFields = new String[] {"country", "state", "cfg_*"};
+		String[] includeFields = new String[] {"business_industry_desc", "created_by", "*industry*"};
 //		String[] includeFields = null;
-//		String[] excludeFields = new String[] {"section", "established_date"};
-		String[] excludeFields = null;
+		String[] excludeFields = new String[] {"@timestamp", "@version"};
+//		String[] excludeFields = null;
 		searchSourceBuilder.fetchSource(includeFields, excludeFields);
 		
 		/**
@@ -286,21 +294,21 @@ public class SearchService {
                 .maxExpansions(10);
 		
 		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
-		searchSourceBuilder.query(matchQueryBuilder);
+		searchSourceBuilder.query(QueryBuilders.boolQuery().must(matchQueryBuilder));
 		
-		SearchRequest searchRequest = new SearchRequest(); 
-		searchRequest.source(searchSourceBuilder).indices(index);
+		SearchRequest searchRequest = new SearchRequest(index); 
+		searchRequest.source(searchSourceBuilder);
 		
 //		searchSourceBuilder.fetchSource(false);
 		searchSourceBuilder.sort(new FieldSortBuilder("_id").order(SortOrder.ASC));
 		
 		HighlightBuilder highlightBuilder = new HighlightBuilder(); 
 		
-		HighlightBuilder.Field highlightState = new HighlightBuilder.Field("state");
+		HighlightBuilder.Field highlightState = new HighlightBuilder.Field(fieldName);
 		highlightState.highlighterType("unified");
 		highlightBuilder.field(highlightState);  
 		
-		HighlightBuilder.Field highlightCountry = new HighlightBuilder.Field("country");
+		HighlightBuilder.Field highlightCountry = new HighlightBuilder.Field(fieldValue);
 		highlightBuilder.field(highlightCountry);
 		
 		searchSourceBuilder.highlighter(highlightBuilder);
@@ -315,6 +323,17 @@ public class SearchService {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		SearchHits hits = searchResponse.getHits();
+		
+		for (SearchHit hit : hits.getHits()) {
+		    Map<String, HighlightField> highlightFields = hit.getHighlightFields();
+		    HighlightField highlight = highlightFields.get(fieldName); 
+		    Text[] fragments = highlight.fragments();  
+		    String fragmentString = fragments[0].string();
+		    System.out.println();
+		}
+		
 		return searchResponse;
 	}
 	
@@ -323,7 +342,8 @@ public class SearchService {
 	 * Aggregations can be added to the search by first creating the appropriate AggregationBuilder and then setting it on the SearchSourceBuilder.
 	 * In the following example we create a terms aggregation on "lowest_generic_line_hierarchy_id" with a sub-aggregation on the average number:
 	 */
-	public SearchResponse requestingAggregations(String index, String fieldName, String fieldValue) {
+	@SuppressWarnings("unused")
+	public SearchResponse requestingAggregations(String index, String fieldName1, String fieldName2) {
 		
 		RestHighLevelClient client = searchClient.getClient();
 
@@ -331,34 +351,117 @@ public class SearchService {
 		
 		SearchRequest searchRequest = new SearchRequest(index);
 		
-		RequestOptions COMMON_OPTIONS = RequestOptions.DEFAULT;
 		
-//		TermsAggregationBuilder aggregation = AggregationBuilders.terms("by_company")
-//		        .field("lowest_generic_line_hierarchy_id");
-//		
-//		aggregation.subAggregation(AggregationBuilders.avg("lowest_generic_line_hierarchy_id")
-//		        .field("lowest_generic_line_hierarchy_id"));
+		TermsAggregationBuilder aggregation = AggregationBuilders.terms("by_business_city")
+		        .field(fieldName1+".keyword");
 		
-		AggregationBuilder aggregation = AggregationBuilders
-				.global("aggs")
-				.subAggregation(
-						AggregationBuilders
-						.terms("lowest_generic_line_hierarchy_id")
-						.field("lowest_generic_line_hierarchy_id"));
-		
+		aggregation.subAggregation(AggregationBuilders.avg("avg_inspection_scores")
+		        .field(fieldName2));
 		
 		searchSourceBuilder.aggregation(aggregation);
 		
-		
+		searchRequest.source(searchSourceBuilder);
 		
 		SearchResponse searchResponse = null;
 		
 		try {
-			searchResponse = client.search(searchRequest, COMMON_OPTIONS);
+			searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
 			System.out.println("\n\n"+searchResponse+"\n\n");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		SearchHits hits = searchResponse.getHits();
+		
+		Aggregations aggregations = searchResponse.getAggregations();
+		Terms by_business_city = aggregations.get("by_business_city");
+		Bucket elasticBucket = by_business_city.getBucketByKey("San Francisco"); 
+		Avg avg_inspection_scores = elasticBucket.getAggregations().get("avg_inspection_scores"); 
+		double avg = avg_inspection_scores.getValue();
+		
+//		  "aggregations": {
+//		    "sterms#by_business_city": {
+//		      "doc_count_error_upper_bound": 0,
+//		      "sum_other_doc_count": 0,
+//		      "buckets": [
+//		        {
+//		          "key": "San Francisco",
+//		          "doc_count": 5,
+//		          "avg#avg_inspection_scores": {
+//		            "value": 90.8
+//		          }
+//		        },
+//		        {
+//		          "key": "San Francisco Whard Restaurant",
+//		          "doc_count": 1,
+//		          "avg#avg_inspection_scores": {
+//		            "value": 56.0
+//		          }
+//		        }
+//		      ]
+//		    }
+//		  }
+		
+		
+		return searchResponse;
+	}
+
+	
+	public SearchResponse searchDifferentOperations(String index, String fieldName, String value1, String value2, String operation) {
+		
+		RestHighLevelClient client = searchClient.getClient();
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+		
+		
+		if(operation.equalsIgnoreCase("between")) {
+			
+			searchSourceBuilder.query(QueryBuilders.boolQuery()
+					.must(QueryBuilders.rangeQuery(fieldName).from(value1).to(value2).includeLower(true).includeUpper(true)));
+			
+		}
+		
+		if(operation.equalsIgnoreCase("gte")) {
+			
+			searchSourceBuilder.query(QueryBuilders.boolQuery()
+					.must(QueryBuilders.rangeQuery(fieldName).gte(value1)));
+			
+		}
+		
+		if(operation.equalsIgnoreCase("lte")) {
+			
+			searchSourceBuilder.query(QueryBuilders.boolQuery()
+					.must(QueryBuilders.rangeQuery(fieldName).lte(value2)));
+			
+		}
+		
+		if(operation.equalsIgnoreCase("exact")) {
+			
+			searchSourceBuilder.query(QueryBuilders.disMaxQuery().add(QueryBuilders.boolQuery() 
+					.must(QueryBuilders.matchQuery(fieldName, value1))));
+			
+			searchSourceBuilder.query(QueryBuilders.disMaxQuery().add(QueryBuilders.boolQuery() 
+					.must(QueryBuilders.rangeQuery("front_id").lte(value2)))); 
+			
+			System.out.println();
+		}
+		
+		SearchRequest searchRequest = new SearchRequest(index);
+		searchRequest.source(searchSourceBuilder);
+		
+		SearchResponse searchResponse = null;
+		
+		try {
+			searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+			System.out.println("\n\n"+searchResponse+"\n\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		
+		SearchHits hits = searchResponse.getHits();
+		TotalHits totalHits = hits.getTotalHits();
+		
+		
 		return searchResponse;
 	}
 }
