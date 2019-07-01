@@ -93,5 +93,17 @@ public class SearchController {
 		return searchResponse;
 	}
 	
+	@PostMapping(value = "/sql-query-testing")
+	public SearchResponse sqlQueryTesting(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
+		SearchResponse searchResponse = searchService.sqlQueryTesting(inputMap.get("index"));
+		return searchResponse;
+	}
+	
+	@PostMapping(value = "/and-or-query-testing")
+	public SearchResponse andOrQueryTesting(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
+		SearchResponse searchResponse = searchService.andOrQueryTesting(inputMap);
+		return searchResponse;
+	}
+	
 	
 }

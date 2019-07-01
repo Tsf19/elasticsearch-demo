@@ -3,9 +3,11 @@ package com.tousif.service.impl;
 
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.lucene.search.TotalHits;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -464,4 +466,82 @@ public class SearchService {
 		
 		return searchResponse;
 	}
+
+
+	public SearchResponse sqlQueryTesting(String string) {
+
+		RestHighLevelClient client = searchClient.getClient();
+		
+//		Map<String, Object> json = new HashMap<String, Object>();
+//		json.put("query","SELECT business_industry FROM cfg_business_industry_esi");
+
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+		//searchSourceBuilder.query(QueryBuilders.queryStringQuery("SELECT business_industry FROM cfg_business_industry_esi"));
+
+		QueryBuilder qb = QueryBuilders.simpleQueryStringQuery("SELECT business_industry FROM cfg_business_industry_esi");
+		searchSourceBuilder.query(qb);
+
+		SearchRequest searchRequest = new SearchRequest(); //Search all indices
+
+		searchRequest.source(searchSourceBuilder);
+
+		RequestOptions COMMON_OPTIONS = RequestOptions.DEFAULT;
+
+		SearchResponse searchResponse = null;
+
+		try {
+			searchResponse = client.search(searchRequest, COMMON_OPTIONS);
+			System.out.println("\n\n"+searchResponse+"\n\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return searchResponse;
+	}
+	
+	public SearchResponse andOrQueryTesting(Map<String ,String > inputMap) {
+
+		String field1 = inputMap.get("field1");
+		String value1 = inputMap.get("value1");
+		String field2 = inputMap.get("field2");
+		String value2 = inputMap.get("value2");
+		String field3 = inputMap.get("field3");
+		String value3 = inputMap.get("value3");
+
+		RestHighLevelClient client = searchClient.getClient();
+
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+
+		QueryBuilder qb = QueryBuilders
+				.boolQuery()
+				.must(QueryBuilders.matchQuery(field1, value1))
+				.should(QueryBuilders.matchQuery(field2, value2))
+				.should(QueryBuilders.matchQuery(field3, value3));
+
+		searchSourceBuilder.query(qb);
+		
+		String[] includeFields = new String[] {field1, field2, field3};
+//		String[] includeFields = null;
+		String[] excludeFields = new String[] {"@timestamp", "@version"};
+//		String[] excludeFields = null;
+		searchSourceBuilder.fetchSource(includeFields, excludeFields);
+		
+
+		SearchRequest searchRequest = new SearchRequest(); //Search all indices
+
+		searchRequest.source(searchSourceBuilder);
+
+		RequestOptions COMMON_OPTIONS = RequestOptions.DEFAULT;
+
+		SearchResponse searchResponse = null;
+
+		try {
+			searchResponse = client.search(searchRequest, COMMON_OPTIONS);
+			System.out.println("\n\n"+searchResponse+"\n\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return searchResponse;
+	}
+	
+	
 }

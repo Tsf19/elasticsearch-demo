@@ -45,10 +45,22 @@
 			<version>7.1.1</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.elasticsearch.plugin</groupId>
+			<artifactId>x-pack-sql-jdbc</artifactId>
+			<version>7.1.1</version>
+		</dependency>
+
 
 
 	</dependencies>
 
+	<repositories>
+		<repository>
+			<id>elastic.co</id>
+			<url>https://artifacts.elastic.co/maven</url>
+		</repository>
+	</repositories>
 
 	<build>
 		<finalName>elasticsearch-7.1</finalName>
