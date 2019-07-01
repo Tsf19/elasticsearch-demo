@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -103,6 +104,12 @@ public class SearchController {
 	public SearchResponse andOrQueryTesting(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
 		SearchResponse searchResponse = searchService.andOrQueryTesting(inputMap);
 		return searchResponse;
+	}
+	
+	@PostMapping(value = "/update-api-testing")
+	public UpdateResponse updateAPITesting(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
+		UpdateResponse response = searchService.updateAPITesting(inputMap);
+		return response;
 	}
 	
 	

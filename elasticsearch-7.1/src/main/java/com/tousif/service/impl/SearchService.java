@@ -10,10 +10,14 @@ import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.Fuzziness;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -541,6 +545,44 @@ public class SearchService {
 			e.printStackTrace();
 		}
 		return searchResponse;
+	}
+
+
+	public UpdateResponse updateAPITesting(Map<String, String> inputMap) {
+
+		String index = inputMap.get("index");
+		String id = inputMap.get("id");
+		String field1 = inputMap.get("field1");
+		String value1 = inputMap.get("value1");
+		String field2 = inputMap.get("field2");
+		String value2 = inputMap.get("value2");
+		
+		
+		RestHighLevelClient client = searchClient.getClient();
+		
+	    XContentBuilder json = null;
+		try {
+			json = XContentFactory.jsonBuilder()
+			        .startObject()
+			            .field(field1, value1)
+			            .field(field2,value2)
+			        .endObject();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		UpdateRequest updateRequest = new UpdateRequest();
+		updateRequest.index(index).id(id);
+		updateRequest.doc(json);
+		
+		UpdateResponse response = null;
+		try {
+		response = client.update(updateRequest, RequestOptions.DEFAULT);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return response;
 	}
 	
 	
