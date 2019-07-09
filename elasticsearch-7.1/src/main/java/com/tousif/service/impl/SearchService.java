@@ -519,16 +519,14 @@ public class SearchService {
 				.boolQuery()
 				.must(QueryBuilders.matchQuery(field1, value1))
 				.should(QueryBuilders.matchQuery(field2, value2))
-				.should(QueryBuilders.matchQuery(field3, value3));
-
+				.should(QueryBuilders.matchQuery(field3, value3)).minimumShouldMatch(1);
+		
 		searchSourceBuilder.query(qb);
 		
-		String[] includeFields = new String[] {field1, field2, field3};
-//		String[] includeFields = null;
-		String[] excludeFields = new String[] {"@timestamp", "@version"};
-//		String[] excludeFields = null;
-		searchSourceBuilder.fetchSource(includeFields, excludeFields);
+		String[] includeFields = new String[] {"id", field1, field2, field3};
+		searchSourceBuilder.fetchSource(includeFields, null);
 		
+		searchSourceBuilder.sort(new FieldSortBuilder("_id").order(SortOrder.ASC));
 
 		SearchRequest searchRequest = new SearchRequest(); //Search all indices
 
@@ -560,6 +558,7 @@ public class SearchService {
 		
 		RestHighLevelClient client = searchClient.getClient();
 		
+		//XContentBuilder is used to convert string to json
 	    XContentBuilder json = null;
 		try {
 			json = XContentFactory.jsonBuilder()

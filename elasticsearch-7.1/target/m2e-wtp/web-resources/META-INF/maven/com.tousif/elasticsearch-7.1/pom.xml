@@ -9,9 +9,8 @@
 		<artifactId>elasticsearch</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-	<groupId>com.tousif</groupId>
+	
 	<artifactId>elasticsearch-7.1</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
 	<packaging>war</packaging>
 	<name>elasticsearch-7.1 Maven Webapp</name>
 	<url>http://maven.apache.org</url>
