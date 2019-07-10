@@ -73,7 +73,7 @@ public class SearchClient {
 		clusterServerPort1 = Integer.parseInt(properties.getProperty("search.servers.port1"));
 		/** METHOD-1 -END*/	
 	
-		/** METHOD-3*/
+		/** METHOD-3*///
 		clusterNameKey3 = env.getProperty("search.cluster.name.key");
 		clusterNameValue3 =	env.getProperty("search.cluster.name.value");
 		clusterServerHost3 = env.getProperty("search.servers.url1");
@@ -88,11 +88,11 @@ public class SearchClient {
 						,new HttpHost("localhost", 9202, "http")
 						,new HttpHost("localhost", 9203, "http")));
 	}
-	
-	public RestHighLevelClient getClient() {
-				return client;
-			}
-	
+
+	public RestHighLevelClient getClient() {//
+		return client;
+	}
+
 	public void closeClient() {
 		try {
 			client.close();
