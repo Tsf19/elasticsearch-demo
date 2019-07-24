@@ -85,8 +85,8 @@ public class SearchClient {
 				RestClient
 				.builder(
 						new HttpHost("localhost", 9200, "http")
-						,new HttpHost("localhost", 9202, "http")
-						,new HttpHost("localhost", 9203, "http")));
+						/*,new HttpHost("localhost", 9202, "http")
+						,new HttpHost("localhost", 9203, "http")*/));
 	}
 
 	public RestHighLevelClient getClient() {//

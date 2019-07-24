@@ -3,8 +3,12 @@ package com.tousif.service.impl;
 
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.index.IndexResponse;
@@ -18,7 +22,9 @@ import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -584,5 +590,45 @@ public class SearchService {
 		return response;
 	}
 	
+	public SearchResponse andOrDynamicQueryTesting(Map<String ,String > inputMap) {
+
+		List<Integer> lineIds = Arrays.asList(96, 97, 98, 94, 95);
+		RestHighLevelClient client = searchClient.getClient();
+
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+
+		BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+
+		for(Entry<String, String> entry : inputMap.entrySet()) {
+			for(Integer lineId : lineIds) {
+				boolQueryBuilder
+				.should(QueryBuilders
+						.boolQuery()
+						.must(QueryBuilders.matchQuery("line_id", lineId).operator(Operator.AND))
+						.must(QueryBuilders.matchQuery("variable_name", entry.getKey()).operator(Operator.AND))
+						.must(QueryBuilders.matchQuery("value", entry.getValue()).operator(Operator.AND))).minimumShouldMatch(1);
+			}
+		}
+		
+		searchSourceBuilder.query(boolQueryBuilder);
+		String[] includeFields = new String[] {"line_id", "value"};;
+		String[] excludeFields = new String[] {"@timestamp", "@version"};
+		searchSourceBuilder.fetchSource(includeFields, excludeFields).size(10000);
+		searchSourceBuilder.sort(new FieldSortBuilder("id").order(SortOrder.ASC));
+
+		SearchRequest searchRequest = new SearchRequest("line_single_variable_join_variable_value");
+		searchRequest.source(searchSourceBuilder);
+
+		RequestOptions COMMON_OPTIONS = RequestOptions.DEFAULT;
+		
+		SearchResponse searchResponse = null;
+		try {
+			searchResponse = client.search(searchRequest, COMMON_OPTIONS);
+			System.out.println("\n\n"+searchResponse+"\n\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return searchResponse;
+	}
 	
 }

@@ -1,4 +1,4 @@
-package com.tousif.service.impl;
+package com.tousif.Elasticsearch7Cookbook;
 
 import java.io.IOException;
 
@@ -10,12 +10,13 @@ import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 
-public class LowLevelRestClientDemo {
+public class _1_LowLevelRestClientDemo {
 
 	public static void main(String[] args) {
 		
 		RestClient client = RestClient.builder(new HttpHost("localhost", 9200, "http")).build();
 		///employee_esi/_search
+		
 		Request request = new Request("GET", "/employee_esi/_search");
 		
 		try {

@@ -112,5 +112,11 @@ public class SearchController {
 		return response;
 	}
 	
+	@PostMapping(value = "/and-or-dynamic-query")
+	public SearchResponse andOrDynamicQueryTesting(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
+		SearchResponse response = searchService.andOrDynamicQueryTesting(inputMap);
+		return response;
+	}
+	
 	
 }
