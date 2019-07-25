@@ -1,6 +1,7 @@
 package com.tousif.controller;
 
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -115,6 +116,12 @@ public class SearchController {
 	@PostMapping(value = "/and-or-dynamic-query")
 	public SearchResponse andOrDynamicQueryTesting(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
 		SearchResponse response = searchService.andOrDynamicQueryTesting(inputMap);
+		return response;
+	}
+	
+	@PostMapping(value = "/scroll-api-testing")
+	public Map<String, List<Map<String, Object>>> scrollAPITesting(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
+		Map<String, List<Map<String, Object>>> response = searchService.scrollAPITesting(inputMap);
 		return response;
 	}
 	

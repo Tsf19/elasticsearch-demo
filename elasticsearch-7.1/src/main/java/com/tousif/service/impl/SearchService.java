@@ -12,14 +12,18 @@ import java.util.Map.Entry;
 
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.ClearScrollRequest;
+import org.elasticsearch.action.search.ClearScrollResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.Fuzziness;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -629,6 +633,86 @@ public class SearchService {
 			e.printStackTrace();
 		}
 		return searchResponse;
+	}
+	
+	public Map<String, List<Map<String, Object>>> scrollAPITesting(Map<String ,String > inputMap) {
+
+		String indexName = inputMap.get("indexName");
+		String fieldName1 = inputMap.get("fieldName1");
+		String fieldValue1 = inputMap.get("fieldValue1");
+		String fieldName2 = inputMap.get("fieldName2");
+		String fieldName3 = inputMap.get("fieldName3");
+		
+		String[] excludeFields = new String[] {"@timestamp", "@version"};
+		String[] includeFields = null;
+		
+		RestHighLevelClient client = searchClient.getClient();
+
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+		searchSourceBuilder.query(QueryBuilders.matchQuery(fieldName1, fieldValue1));
+		searchSourceBuilder.fetchSource(includeFields, excludeFields).size(30);
+		searchSourceBuilder.sort(new FieldSortBuilder("id").order(SortOrder.ASC));
+		
+		SearchRequest searchRequest = new SearchRequest(indexName);
+		searchRequest.source(searchSourceBuilder);
+		searchRequest.scroll(TimeValue.timeValueMinutes(1));
+//		searchRequest.scroll("60s");//Also Valid
+//		searchRequest.scroll("1m");//Also Valid
+		
+		RequestOptions COMMON_OPTIONS = RequestOptions.DEFAULT;
+		
+		SearchResponse searchResponse = null;
+		try {
+			searchResponse = client.search(searchRequest, COMMON_OPTIONS);
+			System.out.println("\n\n"+searchResponse+"\n\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		String scrollId = searchResponse.getScrollId();
+		SearchHit[] hits = searchResponse.getHits().getHits();
+
+		Map<String, List<Map<String, Object>>>	sourceMap = new HashMap<>();
+		
+		int j = 1;
+		while(hits != null && hits.length > 0){
+			List<Map<String, Object>> listOfMap = new ArrayList<>();
+			for(SearchHit hit : hits) {
+				Map<String, Object> sourceAsMap = hit.getSourceAsMap();
+				Map<String, Object> map = new HashMap<>();
+				map.put(sourceAsMap.get(fieldName2).toString(), sourceAsMap.get(fieldName3));
+				listOfMap.add(map);
+			}
+			sourceMap.put(scrollId +" - "+j++, listOfMap);
+			
+			SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+			scrollRequest.scroll(TimeValue.timeValueSeconds(30));
+//			scrollRequest.scroll("30s"); //Also Valid
+			SearchResponse searchScrollResponse = null;
+			try {
+				searchScrollResponse = client.scroll(scrollRequest, RequestOptions.DEFAULT);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			scrollId = searchScrollResponse.getScrollId();
+			hits = searchScrollResponse.getHits().getHits();
+		}
+		
+		/** The search contexts used by the Search Scroll API are automatically deleted when the scroll times out.
+		 * But it is advised to release search contexts as soon as they are not necessary anymore using the Clear Scroll API.*/
+		ClearScrollRequest clearScrollRequest = new ClearScrollRequest(); 
+		clearScrollRequest.addScrollId(scrollId);
+		ClearScrollResponse clearScrollResponse = null;
+		try {
+			clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		boolean succeeded = clearScrollResponse.isSucceeded();
+		if(succeeded)
+			return sourceMap;
+		else
+			return null;
 	}
 	
 }
