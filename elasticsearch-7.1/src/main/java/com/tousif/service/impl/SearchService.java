@@ -14,6 +14,8 @@ import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.ClearScrollResponse;
+import org.elasticsearch.action.search.MultiSearchRequest;
+import org.elasticsearch.action.search.MultiSearchResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
@@ -48,6 +50,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.tousif.client.SearchClient;
+import com.tousif.model.SearchResultVo;
 
 
 @Component
@@ -674,7 +677,7 @@ public class SearchService {
 
 		Map<String, List<Map<String, Object>>>	sourceMap = new HashMap<>();
 		
-		int j = 1;
+		int i = 1;
 		while(hits != null && hits.length > 0){
 			List<Map<String, Object>> listOfMap = new ArrayList<>();
 			for(SearchHit hit : hits) {
@@ -683,7 +686,7 @@ public class SearchService {
 				map.put(sourceAsMap.get(fieldName2).toString(), sourceAsMap.get(fieldName3));
 				listOfMap.add(map);
 			}
-			sourceMap.put(scrollId +" - "+j++, listOfMap);
+			sourceMap.put(scrollId +" - "+i++, listOfMap);
 			
 			SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
 			scrollRequest.scroll(TimeValue.timeValueSeconds(30));
@@ -712,6 +715,184 @@ public class SearchService {
 		if(succeeded)
 			return sourceMap;
 		else
+			return null;
+	}
+	
+//	public Map<String, List<Map<String, Object>>> multiSearchTesting(Map<String ,String > inputMap) {
+//		
+//		Map<String, List<Map<String, Object>>>	responseMap = new HashMap<>();
+//		
+//		String indexName1 = inputMap.get("indexName1");
+//		String indexName2 = inputMap.get("indexName2");
+//		String fieldName1 = inputMap.get("fieldName1");
+//		String fieldValue1 = inputMap.get("fieldValue1");
+//		String fieldName2 = inputMap.get("fieldName2");
+//		String fieldValue2 = inputMap.get("fieldValue2");
+//		String fieldName3 = inputMap.get("fieldName3");
+//		String fieldValue3 = inputMap.get("fieldValue3");
+//		
+//		String[] excludeFields = new String[] {"@timestamp", "@version"};
+//		String[] includeFields = null;
+//		
+//		RestHighLevelClient client = searchClient.getClient();
+//
+//		MultiSearchRequest request = new MultiSearchRequest(); 
+//		
+//		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+//		searchSourceBuilder.query(QueryBuilders.matchQuery(fieldName1, fieldValue1));
+//		searchSourceBuilder.fetchSource(includeFields, excludeFields);
+//		searchSourceBuilder.sort(new FieldSortBuilder("id").order(SortOrder.ASC));
+//		searchSourceBuilder.size(100);
+//		SearchRequest firstSearchRequest = new SearchRequest(indexName1);
+//		firstSearchRequest.source(searchSourceBuilder);
+//		firstSearchRequest.scroll(TimeValue.timeValueMinutes(1));
+//		request.add(firstSearchRequest);
+//		
+//		searchSourceBuilder = new SearchSourceBuilder();
+//		searchSourceBuilder.query(QueryBuilders.matchQuery(fieldName3, fieldValue3));
+//		searchSourceBuilder.fetchSource(includeFields, excludeFields);
+//		searchSourceBuilder.sort(new FieldSortBuilder("id").order(SortOrder.ASC));
+//		searchSourceBuilder.size(100);
+//		SearchRequest secondSearchRequest = new SearchRequest(indexName2); 
+//		secondSearchRequest.source(searchSourceBuilder);
+//		secondSearchRequest.scroll(TimeValue.timeValueMinutes(1));
+//		request.add(secondSearchRequest);
+//		
+//		MultiSearchResponse response = null;
+//		try {
+//			response = client.msearch(request, RequestOptions.DEFAULT);
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//		
+//		MultiSearchResponse.Item firstResponse = response.getResponses()[0];   
+//		SearchResponse searchResponse = firstResponse.getResponse();
+//		
+//		MultiSearchResponse.Item secondResponse = response.getResponses()[1];  
+//		searchResponse = secondResponse.getResponse();
+//		
+//		
+//		
+//		return responseMap;
+//		
+//	}
+	
+	public SearchResultVo multiSearchTesting(Map<String ,String > inputMap) {
+		
+		SearchResultVo searchResultVo = new SearchResultVo();
+		Map<String, List<Map<String, Object>>>	responseMap = new HashMap<>();
+		Integer totalHits = 0;
+		
+		String indexName1 = inputMap.get("indexName1");
+		String fieldName1 = inputMap.get("fieldName1");
+		String fieldValue1 = inputMap.get("fieldValue1");
+
+		String indexName2 = inputMap.get("indexName2");
+		String fieldName2 = inputMap.get("fieldName2");
+		String fieldValue2 = inputMap.get("fieldValue2");
+		
+		String fieldName3 = inputMap.get("fieldName3");
+		String fieldValue3 = inputMap.get("fieldValue3");
+		
+
+		MultiSearchRequest request = new MultiSearchRequest(); 
+		
+		String[] includeFields = null;
+		SearchRequest firstSearchRequest = queryBuilder(indexName1, fieldName1, fieldValue1, includeFields);
+		request.add(firstSearchRequest);
+		
+		includeFields = null;
+		SearchRequest secondSearchRequest = queryBuilder(indexName2, fieldName2, fieldValue2, includeFields);	
+		request.add(secondSearchRequest);
+		
+		RestHighLevelClient client = searchClient.getClient();
+		MultiSearchResponse response = null;
+		try {
+			response = client.msearch(request, RequestOptions.DEFAULT);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		MultiSearchResponse.Item firstResponse = response.getResponses()[0];   
+		SearchResponse searchResponse = firstResponse.getResponse();
+		SearchResultVo firstSearchResult = responseProcessor(searchResponse, indexName1, client);
+		totalHits = totalHits + firstSearchResult.getTotalHits();
+		responseMap.put(indexName1, firstSearchResult.getSourceMap().get(indexName1));
+		
+		MultiSearchResponse.Item secondResponse = response.getResponses()[1];  
+		searchResponse = secondResponse.getResponse();
+		SearchResultVo secondSearchResult = responseProcessor(searchResponse, indexName2, client);
+		totalHits = totalHits + secondSearchResult.getTotalHits();
+		responseMap.put(indexName2, secondSearchResult.getSourceMap().get(indexName1));
+		
+		searchResultVo.setTotalHits(totalHits);
+		searchResultVo.setSourceMap(responseMap);
+		return searchResultVo;
+	}
+	
+	private SearchRequest queryBuilder(String indexName, String fieldName, String fieldValue, String[] includeFields) {
+		
+		String[] excludeFields = new String[] {"@timestamp", "@version"};
+		
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+		searchSourceBuilder.query(QueryBuilders.matchQuery(fieldName, fieldValue));
+		searchSourceBuilder.fetchSource(includeFields, excludeFields);
+		searchSourceBuilder.sort(new FieldSortBuilder("id").order(SortOrder.ASC));
+		searchSourceBuilder.size(100);
+		SearchRequest searchRequest = new SearchRequest(indexName);
+		searchRequest.source(searchSourceBuilder);
+		searchRequest.scroll(TimeValue.timeValueMinutes(1));
+		
+		return searchRequest;
+	}
+	
+	private SearchResultVo responseProcessor(SearchResponse searchResponse, String indexName, RestHighLevelClient client) {
+
+		SearchResultVo searchResultVo = new SearchResultVo();
+		Map<String, List<Map<String, Object>>>	sourceMap = new HashMap<>();
+		List<Map<String, Object>> listOfMap = new ArrayList<>();
+
+		String scrollId = searchResponse.getScrollId();
+		SearchHits searchHits = searchResponse.getHits();
+		Integer totalHits = (int)searchHits.getTotalHits().value;
+
+		SearchHit[] hits = searchHits.getHits();
+
+		while(hits != null && hits.length > 0){
+
+			for(SearchHit hit : hits) {
+				Map<String, Object> sourceAsMap = hit.getSourceAsMap();
+				listOfMap.add(sourceAsMap);
+			}
+
+			SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+			scrollRequest.scroll(TimeValue.timeValueSeconds(30));
+			SearchResponse searchScrollResponse = null;
+			try {
+				searchScrollResponse = client.scroll(scrollRequest, RequestOptions.DEFAULT);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			scrollId = searchScrollResponse.getScrollId();
+			hits = searchScrollResponse.getHits().getHits();
+		}
+
+		sourceMap.put(indexName, listOfMap);
+		searchResultVo.setSourceMap(sourceMap);
+		searchResultVo.setTotalHits(totalHits);
+
+		ClearScrollRequest clearScrollRequest = new ClearScrollRequest(); 
+		clearScrollRequest.addScrollId(scrollId);
+		ClearScrollResponse clearScrollResponse = null;
+		try {
+			clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		boolean succeeded = clearScrollResponse.isSucceeded();
+		if(succeeded) 
+			return searchResultVo;
+		else 
 			return null;
 	}
 	

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.tousif.model.SearchResultVo;
 import com.tousif.service.impl.SearchService;
 
 import org.springframework.http.MediaType;
@@ -123,6 +124,12 @@ public class SearchController {
 	public Map<String, List<Map<String, Object>>> scrollAPITesting(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
 		Map<String, List<Map<String, Object>>> response = searchService.scrollAPITesting(inputMap);
 		return response;
+	}
+	
+	@PostMapping(value = "/multisearch-testing")
+	public SearchResultVo multiSearchTesting(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
+		SearchResultVo searchResultVo = searchService.multiSearchTesting(inputMap);
+		return searchResultVo;
 	}
 	
 	
