@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.TotalHits;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.ClearScrollResponse;
 import org.elasticsearch.action.search.MultiSearchRequest;
@@ -33,6 +33,7 @@ import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -46,6 +47,8 @@ import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -58,6 +61,8 @@ public class SearchService {
 
 	@Autowired
 	private SearchClient searchClient;
+	
+	private static final Logger logger = LoggerFactory.getLogger(SearchService.class);
 	
 	/**
 	 * @SEARCH_REQUEST
@@ -808,6 +813,7 @@ public class SearchService {
 		RestHighLevelClient client = searchClient.getClient();
 		MultiSearchResponse response = null;
 		try {
+			logger.warn("\n\n\nexecuting multisearch request.......\n\n\n");
 			response = client.msearch(request, RequestOptions.DEFAULT);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -823,7 +829,7 @@ public class SearchService {
 		searchResponse = secondResponse.getResponse();
 		SearchResultVo secondSearchResult = responseProcessor(searchResponse, indexName2, client);
 		totalHits = totalHits + secondSearchResult.getTotalHits();
-		responseMap.put(indexName2, secondSearchResult.getSourceMap().get(indexName1));
+		responseMap.put(indexName2, secondSearchResult.getSourceMap().get(indexName2));
 		
 		searchResultVo.setTotalHits(totalHits);
 		searchResultVo.setSourceMap(responseMap);
@@ -852,21 +858,145 @@ public class SearchService {
 		Map<String, List<Map<String, Object>>>	sourceMap = new HashMap<>();
 		List<Map<String, Object>> listOfMap = new ArrayList<>();
 
-		String scrollId = searchResponse.getScrollId();
+//		String scrollId = searchResponse.getScrollId();
 		SearchHits searchHits = searchResponse.getHits();
 		Integer totalHits = (int)searchHits.getTotalHits().value;
 
 		SearchHit[] hits = searchHits.getHits();
 
-		while(hits != null && hits.length > 0){
+//		while(hits != null && hits.length > 0){
 
 			for(SearchHit hit : hits) {
 				Map<String, Object> sourceAsMap = hit.getSourceAsMap();
 				listOfMap.add(sourceAsMap);
 			}
 
+//			SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+//			scrollRequest.scroll(TimeValue.timeValueSeconds(30));
+//			SearchResponse searchScrollResponse = null;
+//			try {
+//				searchScrollResponse = client.scroll(scrollRequest, RequestOptions.DEFAULT);
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//			scrollId = searchScrollResponse.getScrollId();
+//			hits = searchScrollResponse.getHits().getHits();
+//		}
+
+		sourceMap.put(indexName, listOfMap);
+		searchResultVo.setSourceMap(sourceMap);
+		searchResultVo.setTotalHits(totalHits);
+//
+//		ClearScrollRequest clearScrollRequest = new ClearScrollRequest(); 
+//		clearScrollRequest.addScrollId(scrollId);
+//		ClearScrollResponse clearScrollResponse = null;
+//		try {
+//			clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//		boolean succeeded = clearScrollResponse.isSucceeded();
+//		if(succeeded) 
+//			return searchResultVo;
+//		else 
+//			return null;
+		return searchResultVo;
+	}
+	
+	
+	public SearchResultVo test(Map<String ,String > inputMap) {
+
+		String indexName = inputMap.get("indexName");
+		String fieldName1 = inputMap.get("fieldName1");
+		String fieldName2 = inputMap.get("fieldName2");
+		String fieldName3 = inputMap.get("fieldName3");
+		String fieldName4 = inputMap.get("fieldName4");
+		String fieldName5 = inputMap.get("fieldName5");
+		String searchKey = inputMap.get("value");
+
+		List<Integer> lineHierarchyLowestIdList = Arrays.asList(14, 16, 12, 13, 15);
+		List<Integer> companyVariantHierarchyLowestIdList = Arrays.asList(22, 20, 21);
+		
+		String[] excludeFields = new String[] {"@timestamp", "@version"};
+		String[] includeFields = new String[] {"id", "active", "generic_line_hierarchy_id", "universal_line_name",
+				"company_variant_hierarchy_id", "generic_line_hierarchy_name", "company_variant_hierarchy_name", "line_description", "line_name"};
+		String[] fieldNameArray = new String[] {"generic_line_hierarchy_name", "universal_line_name", "company_variant_hierarchy_name", "line_description", "line_name"};
+		
+		RestHighLevelClient client = searchClient.getClient();
+
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder(); 
+		
+		BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+
+		if(searchKey.contains("-") || searchKey.contains("#") || searchKey.contains(" ")) {
+			String[] searchKeyArray = searchKey.split("\\-|\\#|\\ ");
+
+			BoolQueryBuilder innerBoolQueryBuilder = QueryBuilders.boolQuery();
+
+			for(String searchKeyValue : searchKeyArray) {
+				innerBoolQueryBuilder
+				.must(QueryBuilders.multiMatchQuery(searchKeyValue, fieldNameArray).operator(Operator.AND));
+			}
+
+			boolQueryBuilder
+			.should(QueryBuilders
+					.boolQuery()
+					.must(QueryBuilders
+							.termsQuery("generic_line_hierarchy_id", lineHierarchyLowestIdList))
+					.must(QueryBuilders
+							.termsQuery("company_variant_hierarchy_id", companyVariantHierarchyLowestIdList))
+					.must(QueryBuilders
+							.boolQuery()
+							.must(innerBoolQueryBuilder
+									)));
+		}
+		
+		searchSourceBuilder.query(boolQueryBuilder);
+		System.out.println();
+		
+		
+//		searchSourceBuilder.query(QueryBuilders.matchQuery(fieldName1, fieldValue1));
+		searchSourceBuilder.fetchSource(includeFields, excludeFields);
+		searchSourceBuilder.sort(new FieldSortBuilder("id").order(SortOrder.ASC));
+		searchSourceBuilder.size(10000);
+		
+		SearchRequest searchRequest = new SearchRequest(indexName);
+		searchRequest.source(searchSourceBuilder);
+		searchRequest.scroll(TimeValue.timeValueMinutes(1));
+		
+		RequestOptions COMMON_OPTIONS = RequestOptions.DEFAULT;
+		
+		SearchResponse searchResponse = null;
+		try {
+			searchResponse = client.search(searchRequest, COMMON_OPTIONS);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		
+		String scrollId = searchResponse.getScrollId();
+		SearchHits searchHits = searchResponse.getHits();
+		SearchHit[] hits = searchHits.getHits();
+		Integer totalHits = (int)searchHits.getTotalHits().value;
+		
+		SearchResultVo searchResultVo = new SearchResultVo();
+		Map<String, List<Map<String, Object>>>	sourceMap = new HashMap<>();
+		List<Map<String, Object>> listOfMap = new ArrayList<>();
+	
+		
+		while(hits != null && hits.length > 0){
+
+			for (SearchHit hit : hits) {
+				Map<String, Object> sourceAsMap = hit.getSourceAsMap();
+				listOfMap.add(sourceAsMap);
+			}
+
+			sourceMap.put(indexName, listOfMap);
+			searchResultVo.setSourceMap(sourceMap);
+			
+			
 			SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
-			scrollRequest.scroll(TimeValue.timeValueSeconds(30));
+			scrollRequest.scroll(TimeValue.timeValueSeconds(7));
 			SearchResponse searchScrollResponse = null;
 			try {
 				searchScrollResponse = client.scroll(scrollRequest, RequestOptions.DEFAULT);
@@ -875,25 +1005,11 @@ public class SearchService {
 			}
 			scrollId = searchScrollResponse.getScrollId();
 			hits = searchScrollResponse.getHits().getHits();
-		}
 
-		sourceMap.put(indexName, listOfMap);
-		searchResultVo.setSourceMap(sourceMap);
+		}
+		
 		searchResultVo.setTotalHits(totalHits);
-
-		ClearScrollRequest clearScrollRequest = new ClearScrollRequest(); 
-		clearScrollRequest.addScrollId(scrollId);
-		ClearScrollResponse clearScrollResponse = null;
-		try {
-			clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		boolean succeeded = clearScrollResponse.isSucceeded();
-		if(succeeded) 
-			return searchResultVo;
-		else 
-			return null;
+		return searchResultVo;
 	}
-	
+
 }

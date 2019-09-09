@@ -8,7 +8,8 @@ import java.util.Properties;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
@@ -22,6 +23,8 @@ import org.springframework.stereotype.Component;
 @PropertySource({"file:/home/local/DOMAIN/md.tousif/Documents/eclipse-workspace/elasticsearch-demo/elasticsearch-7.1/src/main/resources/searchconfig.properties"})
 public class SearchClient {
 
+	private static final Logger logger = LoggerFactory.getLogger(SearchClient.class);
+	
 //	@Autowired
 //	public Environment env;
 	
@@ -80,7 +83,7 @@ public class SearchClient {
 		clusterServerPort3 = Integer.parseInt(env.getProperty("search.servers.port1"));
 		/** METHOD-3 -END*/
 	
-		
+		logger.info("\n\ncreating elasticsearch client.......\n\n");
 		client = new RestHighLevelClient(
 				RestClient
 				.builder(

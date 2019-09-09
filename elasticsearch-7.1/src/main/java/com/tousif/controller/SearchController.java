@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.tousif.model.SearchResultVo;
 import com.tousif.service.impl.SearchService;
 
+import io.swagger.annotations.ApiOperation;
+
 import org.springframework.http.MediaType;
 
 @RestController
@@ -47,6 +49,7 @@ public class SearchController {
 	
 //	 http://localhost:8080/elasticsearch-7.1/search/search-index?index=vca_mdm_business_index
 	@PostMapping(value = "/search-index")
+	@ApiOperation(value = "Search the given index")
 	public SearchResponse searchIndex(@RequestParam(value = "index", required = true) String index, Locale locale, Model model) {
 		SearchResponse searchResponse = searchService.searchAllWithinIndex(index);
 		return searchResponse;
@@ -54,6 +57,7 @@ public class SearchController {
 	
 //	 http://localhost:8080/elasticsearch-7.1/search/search-field-in-index?index=vca_mdm_business_index&field=state&fieldValue=Delhi
 	@PostMapping(value = "/search-field-in-index")
+	@ApiOperation(value = "Search the given index in given field for the provided field value")
 	public SearchResponse searchFieldInIndex(@RequestParam(value = "index", required = true) String index
 			,@RequestParam(value = "field", required = true) String fieldName
 			,@RequestParam(value = "fieldValue", required = true) String fieldValue
@@ -129,6 +133,12 @@ public class SearchController {
 	@PostMapping(value = "/multisearch-testing")
 	public SearchResultVo multiSearchTesting(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
 		SearchResultVo searchResultVo = searchService.multiSearchTesting(inputMap);
+		return searchResultVo;
+	}
+	
+	@PostMapping(value = "/testing")
+	public SearchResultVo test(@RequestBody  Map<String ,String > inputMap, Locale locale, Model model) {
+		SearchResultVo searchResultVo = searchService.test(inputMap);
 		return searchResultVo;
 	}
 	
